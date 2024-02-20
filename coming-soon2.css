@@ -54,3 +54,34 @@
   .big{
     font-size: 120px;
   }
+  #chat-widget {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 300px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid #eee;
+}
+
+#chat-input {
+    width: calc(100% - 60px);
+    padding: 5px;
+}
+
+#send-message {
+    width: 50px;
+}
+
+/* Add more styles as needed */
