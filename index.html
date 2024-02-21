@@ -52,7 +52,11 @@
     </div>
     <div id="chat-widget">
         <div id="chat-header">
-            <span>Llama 2 Chat</span>
+            <!-- Inside your chat widget's header -->
+            <select id="model-selector">
+                <option value="llama">Llama 2</option>
+                <option value="mistral">Mistral</option>
+            </select>            
         <button id="minimize-chat">-</button>
         </div>
         <div id="chat-messages"></div>

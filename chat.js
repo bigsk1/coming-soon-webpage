@@ -16,40 +16,43 @@ document.addEventListener('DOMContentLoaded', function() {
         chatWidget.classList.toggle('minimized');
         // Adjust button content based on the widget's state
         this.textContent = chatWidget.classList.contains('minimized') ? '↑' : '↓';
-    });    
+    }); 
+    // Example: Clear chat on model change
+    document.getElementById('model-selector').addEventListener('change', function() {
+        // Clear the chat history or reset the chat UI
+        document.getElementById('chat-messages').innerHTML = '';
+        // Optionally display a message or UI indicator for the model switch
+    });
 });
 
 function sendMessage() {
     const input = document.getElementById('chat-input');
+    const modelSelector = document.getElementById('model-selector');
+    const selectedModel = modelSelector.value; // Get the selected model
     const message = input.value.trim();
-    if (!message) return; // Do nothing if the message is empty
-    input.value = ''; // Clear input after sending
+    if (!message) return;
+    input.value = '';
+    // Display user's message in chat before sending
+    displayMessage('You', message); // Make sure this is before the fetch call
 
-    // Display user's message
-    displayMessage('You', message);
-
-    // Send message to Cloudflare Worker and get response
-    fetch('https://worker-cold-mode-0069.aicodelabsio.workers.dev/', {
+    // Send message along with the selected model
+    fetch('https://llm-app-aged-cloud-d28f.aicodelabsio.workers.dev', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ prompt: message })
+        body: JSON.stringify({ prompt: message, model: selectedModel })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        displayMessage('Bot', data.response.response); // Adjust based on your response structure
+        displayMessage('Bot', data.response.response); // Process response
     })
     .catch(error => {
         console.error('Error:', error);
         displayMessage('Bot', 'Sorry, there was an error.');
     });
 }
+
 
 function displayMessage(sender, message) {
     const chatMessages = document.getElementById('chat-messages');

@@ -91,9 +91,9 @@ a {
   bottom: 20px;
   left: 20px;
   width: 300px;
-  background-color: #333; /* Ensure widget background contrasts with button */
+  background-color: #3b3b3b; /* Ensure widget background contrasts with button */
   color: #fff;
-  padding: 10px;
+  padding: 6px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   display: flex;
@@ -106,9 +106,9 @@ a {
   border: 1px solid #4b4f56;
   border-radius: 4px;
   padding: 10px;
-  color: #ffffff;
+  color: #fffefe;
   background: #2c2f33;
-  margin-right: 8px;
+  margin-right: 0px;
   flex-grow: 1;
 }
 
@@ -178,8 +178,8 @@ a {
   justify-content: space-between; /* This spreads out the children */
   align-items: center; /* Vertically centers the items in the header */
   cursor: pointer;
-  background-color: #333;
-  color: #fff;
+  background-color: #3b3b3b;
+  color: #ffffff;
   padding: 5px 10px; /* Add horizontal padding */
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
@@ -220,4 +220,11 @@ a {
 #minimize-chat:focus {
   /* Example: Change the background color slightly on focus */
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+#model-selector {
+  background-color:#3b3b3b;
+  color: #fff;
+  outline: none;
+  border: none;
 }
