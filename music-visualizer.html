@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Music Visualizer</title>
+    
+    <meta name="author" content="bigsk1">
+    <meta name="description" content="An advanced, interactive 3D audio visualizer using Three.js and Web Audio API. Transform your music into mesmerizing visual spectacles with a variety of shapes and color schemes.">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bigsk1.com">
+    <meta property="og:title" content="Advanced Audio Visualizer">
+    <meta property="og:description" content="Experience your music in a new dimension with this interactive 3D audio visualizer.">
+    <meta property="og:image" content="https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/ef22576a-7bfe-4a35-9549-df3946ce6c00/public">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bigsk1.com">
+    <meta property="twitter:title" content="Advanced Audio Visualizer">
+    <meta property="twitter:description" content="Experience your music in a new dimension with this interactive 3D audio visualizer.">
+    <meta property="twitter:image" content="https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/ef22576a-7bfe-4a35-9549-df3946ce6c00/public">
+
+    <link rel="icon" type="image/png" href="https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/702d87a6-0bba-4db0-f0bd-dbd12e941300/public">
+
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background-color: #000; color: #fff; overflow: hidden; }
+        #controls { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; z-index: 1000; max-width: 300px; }
+        button, select, input[type="file"], input[type="color"] { margin: 5px; padding: 8px; background-color: #444; color: #fff; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        button:hover, select:hover { background-color: #555; }
+        #fileInput { display: none; }
+        #fileLabel { display: inline-block; padding: 8px; background-color: #444; color: #fff; border-radius: 5px; cursor: pointer; width: calc(100% - 16px); text-align: center; }
+        #fileLabel:hover { background-color: #555; }
+        .slider-container { display: flex; align-items: center; margin: 10px 0; }
+        .slider-container label { flex: 1; }
+        .slider-container input[type="range"] { flex: 2; }
+        .slider-container span { flex: 0 0 30px; text-align: right; }
+        #visualizerInfo { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+        #audioControls { display: flex; justify-content: space-between; margin-top: 10px; }
+        #audioControls button { flex: 1; margin: 0 5px; }
+        #colorPickers { display: flex; justify-content: space-between; margin-top: 10px; }
+        #colorPickers input[type="color"] { width: 45%; }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <label id="fileLabel" for="fileInput">Choose Audio File</label>
+        <input type="file" id="fileInput" accept="audio/*">
+        <select id="objectType">
+            <option value="sphere">Sphere</option>
+            <option value="cube">Cube</option>
+            <option value="torus">Torus</option>
+            <option value="spiral">Spiral</option>
+            <option value="dna">DNA</option>
+            <option value="galaxy">Galaxy</option>
+            <option value="fountain">Fountain</option>
+            <option value="wavyPlane">Wavy Plane</option>
+            <option value="explosiveSphere">Explosive Sphere</option>
+            <option value="doubleHelix">Double Helix</option>
+            <option value="donut">Donut</option>
+            <option value="nautilusShell">Nautilus Shell</option>
+            <option value="sphereCloud">Sphere Cloud</option>
+            <option value="torusKnot">Torus Knot</option>
+            <option value="superShape">Super Shape</option>
+            <option value="cliffordAttractor">Clifford Attractor</option>
+            <option value="ribbonWave">Ribbon Wave</option>
+            <option value="mouth">Mouth</option>
+            <option value="flower">Flower</option>
+        </select>
+        <div id="audioControls">
+            <button id="startBtn" disabled>Start</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="stopBtn" disabled>Stop</button>
+        </div>
+        <div class="checkbox-container">
+            <input type="checkbox" id="loopCheckbox" checked>
+            <label for="loopCheckbox">Loop Audio</label>
+        </div>
+        <div class="slider-container">
+            <label for="intensitySlider">Intensity:</label>
+            <input type="range" id="intensitySlider" min="0" max="100" value="50">
+            <span id="intensityValue">50</span>
+        </div>
+        <div class="slider-container">
+            <label for="particleCountSlider">Particles:</label>
+            <input type="range" id="particleCountSlider" min="1000" max="20000" step="1000" value="8192">
+            <span id="particleCountValue">8192</span>
+        </div>
+        <div class="slider-container">
+            <label for="rotationSpeedSlider">Rotation:</label>
+            <input type="range" id="rotationSpeedSlider" min="0" max="100" value="50">
+            <span id="rotationSpeedValue">50</span>
+        </div>
+        <div id="colorControls">
+            <select id="colorPreset">
+                <option value="custom">Custom</option>
+                <option value="rainbow">Rainbow</option>
+                <option value="fire">Fire</option>
+                <option value="ocean">Ocean</option>
+                <option value="forest">Forest</option>
+            </select>
+            <div id="customColors">
+                <input type="color" id="color1" value="#ff0000">
+                <input type="color" id="color2" value="#00ff00">
+                <input type="color" id="color3" value="#0000ff">
+                <input type="color" id="color4" value="#ffff00">
+                <button id="addColorBtn">+</button>
+            </div>
+        </div>
+    </div>
+    <div id="visualizerInfo"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, points, audioContext, analyser, audioSource, frequencyData;
+        let isPlaying = false;
+        let audioElement;
+        let intensity = 0.5;
+        let rotationSpeed = 0.5;
+        let particleCount = 8192;
+        let colorStart = new THREE.Color(0xff0000);
+        let colorEnd = new THREE.Color(0x0000ff);
+        let colors = [
+            new THREE.Color(0xff0000),
+            new THREE.Color(0x00ff00),
+            new THREE.Color(0x0000ff),
+            new THREE.Color(0xffff00)
+        ];
+
+        const colorPresets = {
+            rainbow: [0xff0000, 0xff7f00, 0xffff00, 0x00ff00, 0x0000ff, 0x8b00ff],
+            fire: [0xff0000, 0xff7f00, 0xffff00, 0xffffff],
+            ocean: [0x000080, 0x0000ff, 0x00ffff, 0xffffff],
+            forest: [0x006400, 0x228b22, 0x32cd32, 0x90ee90]
+        };
+
+        function setupColorControls() {
+            const colorPresetSelect = document.getElementById('colorPreset');
+            const customColorsDiv = document.getElementById('customColors');
+            const addColorBtn = document.getElementById('addColorBtn');
+        
+            colorPresetSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    customColorsDiv.style.display = 'block';
+                    updateCustomColors();
+                } else {
+                    customColorsDiv.style.display = 'none';
+                    colors = colorPresets[e.target.value].map(c => new THREE.Color(c));
+                }
+            });
+        
+            customColorsDiv.addEventListener('input', updateCustomColors);
+        
+            addColorBtn.addEventListener('click', () => {
+                if (customColorsDiv.children.length < 8) {
+                    const newColor = document.createElement('input');
+                    newColor.type = 'color';
+                    newColor.value = '#ffffff';
+                    customColorsDiv.insertBefore(newColor, addColorBtn);
+                    updateCustomColors();
+                }
+            });
+        }
+
+        function updateCustomColors() {
+            colors = Array.from(document.querySelectorAll('#customColors input[type="color"]'))
+                .map(input => new THREE.Color(input.value));
+        }
+
+        function getColorForFrequency(frequency) {
+            if (colors.length === 0) return new THREE.Color(0xffffff);
+            if (colors.length === 1) return colors[0];
+        
+            const segments = colors.length - 1;
+            const index = Math.min(Math.floor(frequency * segments), segments - 1);
+            const t = (frequency * segments) % 1;
+        
+            const colorLow = colors[index];
+            const colorHigh = colors[index + 1];
+        
+            return new THREE.Color(
+                colorLow.r + (colorHigh.r - colorLow.r) * t,
+                colorLow.g + (colorHigh.g - colorLow.g) * t,
+                colorLow.b + (colorHigh.b - colorLow.b) * t
+            );
+        }
+
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 50;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            createParticles();
+
+            audioElement = new Audio();
+            audioElement.addEventListener('canplay', () => {
+                document.getElementById('startBtn').disabled = false;
+            });
+
+            setupEventListeners();
+            setupColorControls(); 
+            animate();
+        }
+
+        function createParticles() {
+            if (points) scene.remove(points);
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 100;
+                positions[i + 1] = (Math.random() - 0.5) * 100;
+                positions[i + 2] = (Math.random() - 0.5) * 100;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({ size: 0.5, vertexColors: true });
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('startBtn').addEventListener('click', () => {
+                checkAndResumeAudioContext();
+                startVisualization();
+            });
+            document.getElementById('pauseBtn').addEventListener('click', pauseVisualization);
+            document.getElementById('stopBtn').addEventListener('click', stopVisualization);
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            document.getElementById('objectType').addEventListener('change', updateVisualization);
+            document.getElementById('intensitySlider').addEventListener('input', updateIntensity);
+            document.getElementById('particleCountSlider').addEventListener('input', updateParticleCount);
+            document.getElementById('rotationSpeedSlider').addEventListener('input', updateRotationSpeed);
+            document.getElementById('loopCheckbox').addEventListener('change', (e) => {
+                audioElement.loop = e.target.checked;
+            });
+
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('wheel', onMouseWheel, { passive: false });
+            document.addEventListener('mousedown', onMouseDown);
+            audioElement.addEventListener('ended', () => {
+                if (isPlaying) {
+                    audioElement.currentTime = 0;
+                    audioElement.play();
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                audioElement.src = fileURL;
+                document.getElementById('fileLabel').textContent = file.name;
+                audioElement.load(); // Ensure the audio is loaded
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+        
+        function startVisualization() {
+            if (!audioContext) {
+                createAudioContext();
+            }
+            audioElement.play()
+                .then(() => {
+                    isPlaying = true;
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('pauseBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error playing audio:', error);
+                    alert('Error playing audio. Please check the file and try again.');
+                });
+        }
+        
+        function createAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048; // Adjust this value as needed
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+            audioSource = audioContext.createMediaElementSource(audioElement);
+            audioSource.connect(analyser);
+            analyser.connect(audioContext.destination);
+            audioElement.loop = true;
+        }
+        
+        // Add this function to check and resume AudioContext if it's suspended
+        function checkAndResumeAudioContext() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+
+        function startVisualization() {
+            if (!audioContext) createAudioContext();
+            audioElement.play();
+            isPlaying = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+        }
+
+        function pauseVisualization() {
+            if (isPlaying) {
+                audioElement.pause();
+                isPlaying = false;
+                document.getElementById('pauseBtn').textContent = 'Resume';
+            } else {
+                audioElement.play();
+                isPlaying = true;
+                document.getElementById('pauseBtn').textContent = 'Pause';
+            }
+        }
+
+        function stopVisualization() {
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            isPlaying = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'Pause';
+            resetVisualization();
+        }
+
+        function resetVisualization() {
+            const positions = points.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 100;
+                positions[i + 1] = (Math.random() - 0.5) * 100;
+                positions[i + 2] = (Math.random() - 0.5) * 100;
+            }
+            points.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function updateVisualization() {
+            // Shape update happens in the animate function
+        }
+
+        function updateIntensity(event) {
+            intensity = event.target.value / 100;
+            document.getElementById('intensityValue').textContent = event.target.value;
+        }
+
+        function updateParticleCount(event) {
+            particleCount = parseInt(event.target.value);
+            document.getElementById('particleCountValue').textContent = particleCount;
+            createParticles();
+        }
+
+        function updateRotationSpeed(event) {
+            rotationSpeed = event.target.value / 100;
+            document.getElementById('rotationSpeedValue').textContent = event.target.value;
+        }
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isPlaying) {
+                analyser.getByteFrequencyData(frequencyData);
+                const positions = points.geometry.attributes.position.array;
+                const colors = points.geometry.attributes.color.array;
+                const objectType = document.getElementById('objectType').value;
+                const time = Date.now() * 0.001;
+        
+                for (let i = 0; i < positions.length; i += 3) {
+                    const index = i / 3;
+                    const frequencyIndex = Math.floor(index / particleCount * (frequencyData.length / 2));
+                    const frequency = (frequencyData[frequencyIndex] + frequencyData[frequencyIndex + 1]) / 510;        
+                    
+                    let x, y, z;
+                    switch(objectType) {
+                        case 'sphere':
+                            const phi = Math.acos(-1 + (2 * index) / particleCount);
+                            const theta = Math.sqrt(particleCount * Math.PI) * phi;
+                            const radius = 20 + frequency * 10 * intensity;
+                            x = radius * Math.cos(theta) * Math.sin(phi);
+                            y = radius * Math.sin(theta) * Math.sin(phi);
+                            z = radius * Math.cos(phi);
+                            break;
+                        case 'cube':
+                            x = (Math.random() - 0.5) * (20 + frequency * 20 * intensity);
+                            y = (Math.random() - 0.5) * (20 + frequency * 20 * intensity);
+                            z = (Math.random() - 0.5) * (20 + frequency * 20 * intensity);
+                            break;
+                        case 'torus':
+                            const u = index / particleCount * Math.PI * 2;
+                            const v = index / particleCount * Math.PI * 2;
+                            const majorRadius = 15;
+                            const minorRadius = 5 + frequency * 5 * intensity;
+                            x = (majorRadius + minorRadius * Math.cos(v)) * Math.cos(u);
+                            y = (majorRadius + minorRadius * Math.cos(v)) * Math.sin(u);
+                            z = minorRadius * Math.sin(v);
+                            break;
+                        case 'spiral':
+                            const t = index / particleCount * Math.PI * 20;
+                            const spiralRadius = 15 + frequency * 10 * intensity;
+                            x = spiralRadius * Math.cos(t);
+                            y = spiralRadius * Math.sin(t);
+                            z = t - 10;
+                            break;
+                        case 'dna':
+                            const angle = (index / particleCount) * Math.PI * 20;
+                            const dnaRadius = 10 + frequency * 5 * intensity;
+                            x = Math.sin(angle) * dnaRadius;
+                            y = (index / particleCount) * 100 - 50;
+                            z = Math.cos(angle) * dnaRadius;
+                            if (index % 2 === 0) {
+                                x *= 1.5;
+                                z *= 1.5;
+                            }
+                            break;
+                        case 'galaxy':
+                            const arm = index % 5;
+                            const r = (index / particleCount) * 30 + frequency * 10 * intensity;
+                            const angleOffset = (arm / 5) * Math.PI * 2;
+                            const spiralAngle = (index / particleCount) * Math.PI * 6 + angleOffset;
+                            x = r * Math.cos(spiralAngle);
+                            y = (Math.random() - 0.5) * 5 * intensity;
+                            z = r * Math.sin(spiralAngle);
+                            break;
+                        case 'fountain':
+                            const fountainRadius = 10 + frequency * 5 * intensity;
+                            const heightFactor = 20 + frequency * 10 * intensity;
+                            x = fountainRadius * Math.cos(index + time);
+                            y = Math.sin(index * 0.1 + time) * heightFactor;
+                            z = fountainRadius * Math.sin(index + time);
+                            break;
+                        case 'wavyPlane':
+                            const gridSize = Math.sqrt(particleCount);
+                            const gridX = (index % gridSize) / gridSize - 0.5;
+                            const gridY = Math.floor(index / gridSize) / gridSize - 0.5;
+                            x = gridX * 50;
+                            z = gridY * 50;
+                            y = Math.sin(x * 0.1 + time * 2) * Math.cos(z * 0.1 + time * 2) * 10 * frequency * intensity;
+                            break;
+                        case 'explosiveSphere':
+                            const baseRadius = 20;
+                            const explosionFactor = frequency * 30 * intensity;
+                            const sphereTheta = Math.random() * Math.PI * 2;
+                            const spherePhi = Math.acos(2 * Math.random() - 1);
+                            x = (baseRadius + explosionFactor) * Math.sin(spherePhi) * Math.cos(sphereTheta);
+                            y = (baseRadius + explosionFactor) * Math.sin(spherePhi) * Math.sin(sphereTheta);
+                            z = (baseRadius + explosionFactor) * Math.cos(spherePhi);
+                            break;
+                        case 'doubleHelix':
+                            const helixRadius = 10 + frequency * 5 * intensity;
+                            const helixHeight = 50;
+                            const helixTurns = 3;
+                            const helixAngle = (index / particleCount) * Math.PI * 2 * helixTurns;
+                            const helixY = (index / particleCount) * helixHeight - helixHeight / 2;
+                            if (index % 2 === 0) {
+                                x = helixRadius * Math.cos(helixAngle);
+                                z = helixRadius * Math.sin(helixAngle);
+                            } else {
+                                x = helixRadius * Math.cos(helixAngle + Math.PI);
+                                z = helixRadius * Math.sin(helixAngle + Math.PI);
+                            }
+                            y = helixY;
+                            break;
+                        case 'donut':
+                            const donutRadius = 15;
+                            const tubeRadius = 5 + frequency * 2 * intensity;
+                            const donutU = (index / particleCount) * Math.PI * 2;
+                            const donutV = (index % 100 / 100) * Math.PI * 2;
+                            x = (donutRadius + tubeRadius * Math.cos(donutV)) * Math.cos(donutU);
+                            y = (donutRadius + tubeRadius * Math.cos(donutV)) * Math.sin(donutU);
+                            z = tubeRadius * Math.sin(donutV);
+                            break;
+                        case 'nautilusShell':
+                            const a = 0.1;
+                            const b = 0.1;
+                            const shellAngle = index * 0.05;
+                            const shellRadius = a * Math.exp(b * shellAngle);
+                            x = shellRadius * Math.cos(shellAngle) * Math.sin(index * 0.1);
+                            y = shellRadius * Math.sin(shellAngle) * Math.sin(index * 0.1);
+                            z = shellRadius * Math.cos(index * 0.1);
+                            // Apply frequency to the size
+                            x *= 1 + frequency * intensity;
+                            y *= 1 + frequency * intensity;
+                            z *= 1 + frequency * intensity;
+                            break;  
+                        case 'sphereCloud':
+                            const cloudRadius = 20;
+                            const innerSphereCount = 5;
+                            const innerSphereIndex = index % innerSphereCount;
+                            const innerSphereRadius = 5 + frequency * 3 * intensity;
+                            const cloudAngle = (index / particleCount) * Math.PI * 2;
+                            const cloudElevation = Math.acos((2 * (index / innerSphereCount)) / particleCount - 1);
+                            x = cloudRadius * Math.sin(cloudElevation) * Math.cos(cloudAngle);
+                            y = cloudRadius * Math.sin(cloudElevation) * Math.sin(cloudAngle);
+                            z = cloudRadius * Math.cos(cloudElevation);
+                            // Add displacement based on inner spheres
+                            x += innerSphereRadius * Math.sin(innerSphereIndex * Math.PI * 2 / innerSphereCount);
+                            y += innerSphereRadius * Math.cos(innerSphereIndex * Math.PI * 2 / innerSphereCount);
+                            z += (Math.random() - 0.5) * innerSphereRadius;
+                            break;
+                        case 'torusKnot':
+                            const tkP = 3;
+                            const tkQ = 4;
+                            const tkTorusRadius = 20;
+                            const tkTubeRadius = 4 + frequency * 2 * intensity;
+                            const tkKnotAngle = (index / particleCount) * Math.PI * 2;
+                            const tkR = tkTorusRadius + tkTubeRadius * Math.cos(tkQ * tkKnotAngle);
+                            x = tkR * Math.cos(tkP * tkKnotAngle);
+                            y = tkR * Math.sin(tkP * tkKnotAngle);
+                            z = tkTubeRadius * Math.sin(tkQ * tkKnotAngle);
+                            break;
+                        case 'superShape':
+                            const ssA = 1, ssB = 1, ssM = 6, ssN1 = 0.2, ssN2 = 1.7, ssN3 = 1.7;
+                            const ssPhiAngle = (index / particleCount) * Math.PI * 5;
+                            const ssThetaAngle = (index / particleCount) * Math.PI;
+                            const ssR = 20 * (1 + frequency * 0.7 * intensity);
+                            
+                            const ssR1 = Math.pow(Math.pow(Math.abs(Math.cos(ssM * ssThetaAngle / 4) / ssA), ssN2) + 
+                                        Math.pow(Math.abs(Math.sin(ssM * ssThetaAngle / 4) / ssB), ssN3), -1 / ssN1);
+                            const ssR2 = Math.pow(Math.pow(Math.abs(Math.cos(ssM * ssPhiAngle / 4) / ssA), ssN2) + 
+                                        Math.pow(Math.abs(Math.sin(ssM * ssPhiAngle / 4) / ssB), ssN3), -1 / ssN1);
+                            
+                            x = ssR * ssR1 * Math.cos(ssThetaAngle) * ssR2 * Math.cos(ssPhiAngle);
+                            y = ssR * ssR1 * Math.sin(ssThetaAngle) * ssR2 * Math.cos(ssPhiAngle);
+                            z = ssR * ssR2 * Math.sin(ssPhiAngle);
+                            break;
+                        case 'cliffordAttractor':
+                            const caA = 1.5, caB = 1.5, caC = 1.5, caD = 1.5;
+                            const caScale = 10 * (1 + frequency * 0.5 * intensity);
+                            const caXPrev = (index === 0) ? 0 : positions[i - 3];
+                            const caYPrev = (index === 0) ? 0 : positions[i - 2];
+                            
+                            x = caScale * Math.sin(caA * caYPrev) + caC * Math.cos(caA * caXPrev);
+                            y = caScale * Math.sin(caB * caXPrev) + caD * Math.cos(caB * caYPrev);
+                            z = caScale * Math.sin(caXPrev * caYPrev);
+                            break;
+                        case 'ribbonWave':
+                            const rwT = index / particleCount * Math.PI * 10;
+                            const rwWaveHeight = 5 + frequency * 5 * intensity;
+                            const rwTwists = 10;
+                            const rwRadius = 15;
+                            
+                            x = rwRadius * Math.cos(rwT) + rwWaveHeight * Math.sin(rwTwists * rwT) * Math.cos(rwT);
+                            y = rwRadius * Math.sin(rwT) + rwWaveHeight * Math.sin(rwTwists * rwT) * Math.sin(rwT);
+                            z = rwWaveHeight * Math.cos(rwTwists * rwT);
+                            break;
+                        case 'mouth':
+                            const mouthPhi = Math.acos(-1 + (2 * index) / particleCount);
+                            const mouthTheta = Math.sqrt(particleCount * Math.PI) * mouthPhi;
+                            let mouthRadius = 20 + frequency * 10 * intensity;
+                            
+                            // Create mouth opening
+                            const mouthOpenness = 0.5 + frequency * 0.5; // 0.5 to 1
+                            const mouthCenter = Math.PI / 2;
+                            const mouthWidth = Math.PI / 4;
+                            
+                            if (mouthPhi > mouthCenter - mouthWidth && mouthPhi < mouthCenter + mouthWidth) {
+                                const distanceFromCenter = Math.abs(mouthPhi - mouthCenter);
+                                const mouthShape = Math.cos((distanceFromCenter / mouthWidth) * Math.PI / 2);
+                                mouthRadius *= 1 - mouthShape * mouthOpenness;
+                            }
+                            
+                            // Add some waviness to the surface
+                            mouthRadius += Math.sin(5 * mouthTheta + time * 2) * 2 * intensity;
+                            mouthRadius += Math.cos(7 * mouthPhi + time * 3) * 1.5 * intensity;
+                            mouthRadius += Math.sin(3 * (mouthTheta + mouthPhi) + time) * intensity;
+                            
+                            x = mouthRadius * Math.cos(mouthTheta) * Math.sin(mouthPhi);
+                            y = mouthRadius * Math.sin(mouthTheta) * Math.sin(mouthPhi);
+                            z = mouthRadius * Math.cos(mouthPhi);
+                            break;
+                        case 'flower':
+                            const petalCount = 7;
+                            const flowerTheta = (index / particleCount) * Math.PI * 14;
+                            const flowerPhi = (index / particleCount) * Math.PI;
+                            
+                            // Base flower shape
+                            let flowerRadius = 15 * (1 + 0.3 * Math.sin(petalCount * flowerTheta));
+                            
+                            // Add some waviness and movement
+                            flowerRadius += 3 * Math.sin(flowerPhi * 5 + time * 2) * intensity;
+                            flowerRadius += 2 * Math.cos(flowerTheta * 7 + time * 3) * intensity;
+                            
+                            // Pulsate with the music
+                            flowerRadius *= 1 + frequency * 0.5 * intensity;
+                            
+                            // Convert to Cartesian coordinates
+                            const flowerX = flowerRadius * Math.sin(flowerPhi) * Math.cos(flowerTheta);
+                            const flowerY = flowerRadius * Math.sin(flowerPhi) * Math.sin(flowerTheta);
+                            const flowerZ = flowerRadius * Math.cos(flowerPhi);
+                            
+                            // Add some vertical stretching for a more flower-like appearance
+                            x = flowerX;
+                            y = flowerY * 1.5; // Stretch vertically
+                            z = flowerZ;
+                            
+                            // Add some random displacement for a more organic look
+                            x += (Math.random() - 0.5) * 2 * intensity;
+                            y += (Math.random() - 0.5) * 2 * intensity;
+                            z += (Math.random() - 0.5) * 2 * intensity;
+                            break;
+                    }
+        
+                    positions[i] = x;
+                    positions[i + 1] = y;
+                    positions[i + 2] = z;
+        
+                    const color = getColorForFrequency(frequency);
+                    colors[i] = color.r;
+                    colors[i + 1] = color.g;
+                    colors[i + 2] = color.b;
+                }
+        
+                points.geometry.attributes.position.needsUpdate = true;
+                points.geometry.attributes.color.needsUpdate = true;
+        
+                points.rotation.x += 0.001 * rotationSpeed;
+                points.rotation.y += 0.002 * rotationSpeed;
+            }
+        
+            renderer.render(scene, camera);
+            updateVisualizerInfo();
+        }
+        
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseWheel(event) {
+            event.preventDefault();
+            camera.position.z += event.deltaY * 0.1;
+        }
+
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+
+            const deltaMove = {
+                x: event.clientX - previousMousePosition.x,
+                y: event.clientY - previousMousePosition.y
+            };
+
+            points.rotation.y += deltaMove.x * 0.01;
+            points.rotation.x += deltaMove.y * 0.01;
+
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        function updateVisualizerInfo() {
+            const info = document.getElementById('visualizerInfo');
+            if (isPlaying) {
+                const avgFrequency = frequencyData.reduce((sum, value) => sum + value, 0) / frequencyData.length;
+                info.textContent = `Average Frequency: ${avgFrequency.toFixed(2)}`;
+            } else {
+                info.textContent = 'Visualizer paused';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
